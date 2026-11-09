@@ -1,6 +1,7 @@
 # Indian-Supreme-Court-Judgements
 
 ## Phase 1
+
 ## Phase 2
 ## Phase 3
 
@@ -8,4 +9,9 @@
 In this phase, we fine tuning our pre-trained architectures on task of Case Court Judgement Prediction. First challenge we tackle is long case documents, how to make combined representation for full document on which prediction will be based on? Some of the ways which we first guesses are pooling strategies such as sum/avg/ linear combination. Further, we can also use attention mechanisms to build understanding in model which part is most relevant for representation. Linear combinations perform well, so does attention mechanisms but in this case best performance comes out of simplicity. If we check Indian legal case general structure in start they have facts, statutes, etc. while middle part is complete mess and last we have most of important final reasoning. So we do strategic truncation i.e. considering only head 256 tokens and tail 766 tokens with 1024 context window. First we take Decoder-only transformer model with LORMA adaptation which yields F1-score 0.63, secondly we take Selective SSM with Prompt tuning which yields F1-score 0.53 and lastly we take Long context Decoder with LORA adaptations which yields F1-score 0.60. Here, one might argue we are not changing just fine-tuning so much can not be inferred. But case all three architectures performs almost similar language continuation task with F1-scores ~0.81. Thus we can see that LORMA does better than LORA which what one expects but Prompt tuning/ prefix fixing performs much lower. Further, we train student model through Logits distillation from experiment 1 model as teacher model. With half the parameters, training time and cost it performs much competitively with 0.57 F1-score!
 
 ## Phase 5
-In this phase
+In this phase, we fine-tune are pre-trained architectures on task of Legal Statutes Prediction. This also puts the same challenge of long document as in phase 4 but different flavor. Here if we suspect or possibility usage of any statutes in reasoning in any part of document that possibility counts for whole document rather than that part of chunk rather than taking account of whole document. We try 3 different approaches and select best among them as teacher model and train student model as follows:
+1. Using Decoder-only transformer with LORMA adaptation architecture, we chunk the document into windows of 1024 tokens with max 12 chunks which covers fully 99% training documents in corpus and for probability logits we use max logits over all chunks for each statue class. Through training we get macro-F1 score=0.24
+2. Using Selective Single State (mamba-2) style with full fine-tuning, we pass full documents with context window of 2048. One might find 4096 suitable option but with limited compute and training over and random access memory of kaggle it is not fitting. Although with 2048 more than 90% of corpus documents are covered fully which is more than sufficient for training and surprisingly this is best approach with macro-F1 score= 0.30
+3. Using Long-context sparse attention decoder with LORA adaptations we pass chunks of documents with context window 768 and using attention mechanism on representations of chunks, directing our model to learn which sections of documents are value-able for statue recognition. With final training, model yields macro-F1 score= 0.23 which didn't suited with novelty of approach but that can happen in deep learning.
+4. Although model 2 is best but due to time -constraint I use model 1 as teacher model with student model of 30% layer i.e 3/10 and with logits based learning, surprisingly student model performs better than teacher with F1-scorre=0.27 which shows knowledge is distilled very effectively.
+   
